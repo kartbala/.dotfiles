@@ -1,0 +1,93 @@
+[general]
+# adjust here the name and number of accounts
+accounts = kartbala, karthik, blockpower, karthik.b
+maxsyncaccounts = 4
+ui=TTYUI
+socktimeout = 60
+maxage=3
+# password management functions
+pythonfile = ~/.offlineimap.py
+
+[Account kartbala]
+maxage=3
+localrepository = Local-kartbala
+remoterepository = Remote-kartbala
+
+[Repository Local-kartbala]
+type = Maildir
+localfolders = ~/.mail/kartbala
+
+[Repository Remote-kartbala]
+type = Gmail
+remotehost = imap.gmail.com
+remoteuser = kartbala@gmail.com
+remotepasseval = get_password_emacs("imap.gmail.com", "kartbala@gmail.com", "993")
+ssl = yes
+sslcacertfile = /etc/ssl/cert.pem
+maxconnections = 2
+# folder(s)? to exclude
+# All Mail seems to be a constant source of duplicates
+
+folderfilter = lambda foldername: foldername not in ['[Gmail]/All Mail','1 WAITING','BP:WebSignup','BP_Twilio','BP_Twilio','BP:AppSignup','BP:Error','BP:HelloSign','BP:Support','BP:Tripler','[Gmail]/Important','[Gmail]/Drafts','OldMail','Sent','Sent Items','Trash','[Gmail]/Spam','Howard','HUSOB','LSF','PBK','Facebook','Amazon','ARC','AirBnb','B-School','Accessibility','bala829','Booth','Boston','Boost','Cool stuff','emacspeak''Inspiration','Neat program','FastCompany','Northwestern','MIT','HBS','MoviePass','UChicago','Unwanted','Calendar','shipping','survey','Teammates','Spam','Inspiration','emacspeak','GoogleDrive','Financial','PPT','Unbanked','Vision','ROSS','[Mailbox]/Later','[Mailbox]/Today','[Mailbox]/To Read','[Mailbox]/To Buy','[Mailbox]/To Watch','Exercise/training','GmailDelaySend','GmailDelaySend/Errors','GmailDelaySend/ToSend','S/Some Day','Sent to Shoeboxed']
+
+[Account karthik]
+maxage=3
+localrepository = Local-karthik
+remoterepository = Remote-karthik
+
+[Repository Local-karthik]
+type = Maildir
+localfolders = ~/.mail/karthik
+
+[Repository Remote-karthik]
+type = Gmail
+remotehost = imap.gmail.com
+remoteuser = karthik@balasubramanian.us
+remotepasseval = get_password_emacs("imap.gmail.com", "karthik@balasubramanian.us", "993")
+
+ssl = yes
+sslcacertfile = /etc/ssl/cert.pem
+maxconnections = 2
+folderfilter = lambda foldername: foldername not in ['[Gmail]/All Mail']
+
+[Account blockpower]
+maxage=3
+localrepository = Local-blockpower
+remoterepository = Remote-blockpower
+
+[Repository Local-blockpower]
+type = Maildir
+localfolders = ~/.mail/blockpower
+
+[Repository Remote-blockpower]
+type = Gmail
+remotehost = imap.gmail.com
+remoteuser = karthik@blockpower.vote
+remotepasseval = get_password_emacs("imap.gmail.com", "karthik@blockpower.vote", "993")
+ssl = yes
+sslcacertfile = /etc/ssl/cert.pem
+maxconnections = 2
+folderfilter = lambda foldername: foldername not in ['[Gmail]/All Mail']
+
+[Account karthik.b]
+maxage=3
+localrepository = Local-karthik.b
+remoterepository = Remote-karthik.b
+
+[Repository Local-karthik.b]
+type = Maildir
+localfolders = ~/.mail/karthik.b
+
+[Repository Remote-karthik.b]
+type = IMAP
+remotehost = localhost
+remoteuser = karthik.b@howard.edu
+remoteport = 1143
+remotepasseval = get_password_emacs("imap.gmail.com", "kartbala@gmail.com", "993")
+ssl = no
+## sslcacertfile = /etc/ssl/cert.pem
+maxconnections = 1
+# folder(s)? to exclude
+# All Mail seems to be a constant source of duplicates
+
+folderfilter = lambda folder: folder in [ 'Sent','INBOX','Archive' ]

@@ -1,0 +1,743 @@
+* mail configuration
+:PROPERTIES:
+:header-args: :tangle "./personal/mail-configuration.el.gpg" :mkdirp yes :results pp :wrap "src emacs-lisp :tangle no"
+:END:
+
+The choose of the mail stack is the following :
+
+ - offlineimap to fetch mails.
+ - mu to index them.
+ - mu4e to read them.
+ - smtpmail (built-in) to send them.
+
+This org document configure the whole stack by tangling org-blocks (extracting and saving text from this file to the appropriate configuration files). We provide examples of configuration along the way that you can copy ; some of the real data is sensitive and thus, encrypted by a process explained at the end of the document. We also defined ERT tests to test the mail setup automatically.
+
+** global configuration
+
+*** offlineimap                                                     :example:
+
+The general section of offlineimaprc specify the number of accounts, the maxage controls the number maximum age of the mails to be fetched.
+
+#+begin_src conf :tangle no :tangle-mode (identity #o600)
+[general]
+# adjust here the name and number of accounts
+accounts = account1, account2
+maxsyncaccounts = 2
+ui=TTYUI
+socktimeout = 60
+maxage=3
+# password management functions
+pythonfile = ~/.offlineimap.py
+#+end_src
+
+*** pythonfile
+
+You can specify parrwords in plain text in your configuration, and it is helpful to do so while installing the stack (if that your case you can skip that heading for now), just do not forget, once it is done, to secure your credentials.
+
+~offlineimap~ let you use python to fetch the password of your accounts.
+
+This bit of python is only a wrapper to call ~emacsclient~ with a function that will parse [[elisp:(info "(auth) Help for users")][the =.authinfo= file]]. 
+
+#+begin_src python :shebang "#!/bin/python" :tangle ~/.offlineimap.py
+import subprocess
+def get_output(cmd):
+# Bunch of boilerplate to catch the output of a command:
+      pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      (output, errout) = pipe.communicate()
+      assert pipe.returncode == 0 and not errout
+      return output
+def get_password_emacs(host, user, port):
+      cmd = "emacsclient --eval '(offlineimap-get-password \"%s\" \"%s\" \"%s\")'" % (host,user,port)
+      return get_output(cmd).strip().lstrip('"').rstrip('"')
+#+end_src
+
+offlineimap will use emacs as a client, we need to start the server.
+
+#+begin_src emacs-lisp
+(server-start nil t)
+#+end_src
+
+Then we have the function to parse the =.authinfo= file.
+
+#+NAME: offlineimap-get-password
+#+begin_src emacs-lisp :tangle no
+(defun offlineimap-get-password (machine user port)
+  "Get the password of ~/.authinfo.gpg from its MACHINE, USER, PORT."
+  (require 'netrc)
+  (let* ((netrc (netrc-parse
+                 (expand-file-name "~/.authinfo.gpg")))
+         credentials password)
+    (catch 'password
+      (dolist (credentials netrc)
+        (when (netrc-machine (list credentials) machine)
+          (dolist (lst credentials)
+            (when (and (string= (cdr (assoc "login" credentials)) user)
+                       (string= (cdr (assoc "port" credentials)) port))
+              (throw 'password (cdr (assoc "password" credentials))))))))))
+#+end_src
+
+I specify the passwords myself, so don't ask for saving them.
+
+#+begin_src emacs-lisp
+(setq auth-source-save-behavior nil)
+#+end_src
+
+*** main mu4e configuration
+
+Note: This block uses noweb references.
+
+#+begin_src emacs-lisp :noweb yes
+(use-package mu4e
+    :ensure nil
+    :commands mu4e~start
+    :load-path "/usr/local/Cellar/mu/1.4.15/share/emacs/site-lisp/mu/mu4e/"
+    :custom
+    (mu4e-mu-binary (expand-file-name "/usr/local/bin/mu"))
+;; *** crypto
+;; do you want to sign messages with pgp ?
+    ;; (setq mu4e-compose-crypto-reply-policy 'sign-and-encrypt)
+    (mml-secure-openpgp-sign-with-sender t)
+    (mml-secure-openpgp-encrypt-to-self t)
+;; *** be nice for the imap indexer
+    (mu4e-compose-dont-reply-to-self t)
+    (mu4e-change-filenames-when-moving t)
+;; *** Fetching mail
+    ;; the debian stable mu is buggy,
+    ;; just verify it works reliably.
+    (mu4e-get-mail-command "offlineimap")
+;; *** Message view
+    ;; nil to display only the headers
+    ;; or the message at once
+    (mu4e-split-view 'single-window)
+    ;; this is more promising
+    (mu4e-view-use-gnus t)
+    (mu4e-headers-include-related t)
+    (mu4e-headers-skip-duplicates t)
+    (mu4e-headers-show-threads nil)
+    (mu4e-view-show-addresses t)
+    (mu4e-headers-fields
+     '((:human-date . 8)
+       (:from . 16)
+       (:subject)))
+    ;; americans will agree ?
+    (mu4e-headers-date-format "%d/%m/%Y")
+    (mu4e-headers-time-format "%H:%M")
+    ;; enable notifications
+    (mu4e-enable-mode-line t)
+    ;; try to show images ?
+    (mu4e-view-show-images t)
+    (mu4e-view-image-max-width 800)
+    ;; plain text messages
+    ;; (setq mu4e-view-html-plaintext-ratio-heuristic most-positive-fixnum)
+;; *** context policy
+    ;; start with the first context
+    ;; the contexts themselves will
+    ;; be defined later
+    (mu4e-context-policy 'pick-first)
+    (mu4e-compose-context-policy 'automatic)
+    ;; set mail user agent globally
+    ;; for emacs so it is reconized for
+    ;; eg send a bug report
+    (mail-user-agent 'mu4e-user-agent)
+;; *** sent message behavior
+    ;; note this is mostly for gmail because
+    ;; it already save all sent messages
+    ;; we may want tune it
+    ;; specifically by context
+    (mu4e-sent-messages-behavior 'delete)
+;; *** wrapping message body
+;; visual-line-mode + auto-fill upon sending
+    ;; autofill may be annoying though
+    ;; also I have a known bug with it
+    (mu4e-compose-format-flowed nil)
+;; *** Autocomplete addresses
+    (mu4e-compose-complete-addresses t)
+    (mu4e-compose-complete-only-after "2020-01-01")
+    (mu4e-compose-complete-only-personal t)
+;; *** misc
+    (mu4e-attachment-dir "~/Downloads")
+    ;; don't keep message buffers around
+    (message-kill-buffer-on-exit t)
+    ;; use TAB and <backtab> to jump to links
+    ;; works well with gnus-view
+    (with-eval-after-load 'mu4e-view
+      (set-keymap-parent mu4e-view-mode-map button-buffer-map))
+    ;; must mu4e be verbose ?
+    (mu4e-hide-index-messages t)
+;; ** mu4e configurations
+    :config
+    ;; display message in a browser
+    (add-to-list 'mu4e-view-actions
+                 '("browser" . mu4e-action-view-in-browser) t)
+    ;; update the database every ten minutes.
+    (setq mu4e-update-interval 600)
+
+    <<face-settings>>
+
+;; ** mu4e initialisation
+    :init
+
+    <<mu4e-hydra>>
+
+    <<offlineimap-get-password>>
+
+    <<create-or-update-mu4e-context>>
+
+    :bind
+    ("<f12>" . hydra-mu4e-menu/body)
+    (:map mu4e-view-mode-map
+          ;; workaround a bug on
+          ;; mu4e~headers-quit-buffer
+          ;; with gnus-view
+          ("q" . kill-this-buffer)))
+#+end_src
+
+**** an hydra menu
+
+An hydra mimicking the mu4e-menu you can have, and calling directly a search. Eventually we can modify it as we wish.
+
+#+NAME: mu4e-hydra
+#+begin_src emacs-lisp
+(defhydra hydra-mu4e-menu
+  (:color blue
+          ;; Call a global search everytime.
+          :body-pre (progn (mu4e~start)
+                           (mu4e-headers-search "flag:unread"))
+          ;; I specify the format my self.       
+          :hint nil)
+  "
+⸤_j_⸣ump \
+⸤_s_⸣earch \
+⸤_C_⸣ompose \
+⸤_b_⸣ookmarks \
+⸤_;_⸣Switch Context \
+⸤_U_⸣pdate \
+⸤_N_⸣ews \
+⸤_A_⸣bout \
+⸤_H_⸣elp"
+  ;; Use call-interactively
+  ;; to benefit from the
+  ;; interactive specification
+  ;; of the functions.
+  ("j" (call-interactively #'mu4e~headers-jump-to-maildir))
+  ("s" (call-interactively #'mu4e-headers-search))
+  ("C" (call-interactively #'mu4e-compose-new))
+  ("b" (call-interactively #'mu4e-headers-search-bookmark))
+  (";" (call-interactively #'mu4e-context-switch))
+  ("U" (call-interactively #'mu4e-update-mail-and-index))
+  ("N" (call-interactively #'mu4e-news))
+  ("A" (call-interactively #'mu4e-about))
+  ("H" (call-interactively #'mu4e-display-manual)))
+#+end_src
+
+**** smtpmail and debugging.
+
+The smtpmail variables will be set by the mu4e-context mechanism ; still it is worth noting that you can enable debugging with the variables ~smtpmail-debug-verb~ and ~smtpmail-debug-info~. ~mu4e~ can also gives you logs with the commands ~mu4e-toggle-logs~ and ~mu4e-show-logs~.
+
+#+begin_src emacs-lisp
+(use-package smtpmail
+    :ensure nil
+    :custom
+    ;; start in normal mode (default)
+    ;; (smtpmail-queue-mail nil)
+;; *** debugging
+    ;; (smtpmail-debug-verb t)
+    ;; (smtpmail-debug-info t)
+;; *** actually sending mail
+    (message-send-mail-function
+     'smtpmail-send-it))
+#+end_src
+
+**** rich text emails and org integration
+
+#+begin_src emacs-lisp
+(use-package org-mu4e
+    :ensure nil
+    :after mu4e
+    :custom
+    (org-mu4e-convert-to-html t)
+    :bind
+    (:map mu4e-headers-mode-map
+          ("C-c c" . org-mu4e-store-and-capture))
+    (:map mu4e-view-mode-map
+          ("C-c c" . org-mu4e-store-and-capture)))
+#+end_src
+
+**** faces settings
+
+This rude little function colors the mails in function of their fields to separate visually the differents contexts. The ~mu4e-accounts-colors~ variable is set later, with the differents contexts.
+
+#+NAME: face-settings
+#+begin_src emacs-lisp :tangle no :results silent
+;; * faces
+(defvar mu4e-accounts-colors nil)
+
+(defun mu4e-headers-line-apply-accounts-face (msg line)
+  "Apply a foreground face to the header in function of
+`mu4e-accounts-colors'."
+  ;; loop over the fields
+  ;; so it distincts also
+  ;; our own accounts if
+  ;; ever we send a mail
+  ;; between them
+  (let ((fields '(:from :to :cc :bcc)))
+    (catch 'found
+      (dolist (field fields)
+        ;; found the face
+        (dolist (account mu4e-accounts-colors)
+          (when (mu4e-message-contact-field-matches
+                 msg field
+                 (car account))
+            (add-face-text-property
+             0 (length line)
+             `(:foreground ,(cdr account))
+             t line)
+            (throw 'found t)))))
+    ;; always returns the line
+    line))
+
+(add-to-list 'mu4e~headers-line-handler-functions
+             'mu4e-headers-line-apply-accounts-face)
+#+end_src
+
+*** offlineimap test & usage
+
+This first test checks if offlineimap fetch the mails without error.
+
+The way to use theses tests is to simply, load the test file, then call ~ert~, specifying =t= to launch all tests.
+
+Note: exits codes for msmtp are the same as sendmail and are defined in =/usr/include/sysexits.h=.
+
+#+begin_src emacs-lisp :tangle ~/mail.test.el :eval no
+(require 'ert)
+(require 'mu4e)
+(mu4e~start)
+
+(ert-deftest mail-test-offlineimap ()
+    "offlineimap should exit normally"
+  (should (eq
+           (call-process-shell-command
+            "offlineimap")
+           0)))
+#+end_src
+
+*** personal data                                                     :crypt:
+-----BEGIN PGP MESSAGE-----
+
+hQIMA63nEC0fdHGcARAA5oIfC5E1QwegeHYysVhB1jaN4QcATxFPAqJ0ueYMS1lC
+f7iQetQNDd23E1FEnLf8X5gsFs8ubAXk39C8JmqKV4GIaNUeEp5DJHC1LhwylB/H
+V66/R0eVEpLVOg0heulAGy2oTVuWDa2oFo5HrIzbUbgx+KA4WwM+DnerEac61lz9
+hY8YAZ5vk3ZGb5RmXaU/kDK78C9eNTqDkWQhIavs2fDfxS/xRYJwXIkRZsAoIBqU
+9bZBhzzL/fzL0pHJpJXeku7r8qNsF5mLiMrClfwdK15mfGM7r8IAgUzlMfxrB1IO
+5Yh3h0cJxKzt96HePAlcaLQ10pqzmxju4hSFs2VaiuEAKCLs7d07+JcuiSqTZapa
+XeGSwsEXt0hdkFuK3W4DABCW/MueoIJN/ikRxrxCJLrDfXqEMWDNyJtPzLUQmWnb
+CxnnZh+Ax+3ZCOySzNDHFItGrlL/M2m6/32U9gjWz2TYrV1fVssVFi0EA85pV4bY
+nQ5ga8e44dStmeY//ljg1rYSeCsADegEcF5EJTrmZnt1TpNhgaRnjUlAa0ydOCR9
+XQxjTiiGNfAYFp6ZvpUIUW0/ehuOqEbiUvHBjLaNm9RaRUvM0F3amKOKenE31eFl
+8StvqFneIi7vPOxKvv5mFUB8EqPm9PC0lgYkwioK8arlRpOadS1wVGYGbtuoC6TS
+wG4BCRZka1eira7sEcovCcGaP3XDJpuINXiglN5VqNF8nFzRmpri2KiAYrDUa2sP
+ehL+W6xPM2TbDBO+FGpqcGhkw7U/lst0qMxUh0/IeFOyctpzM8VBSigOaREPukea
+W3rTWhAtI2L00vtMWopDA6IPRRjoqewmoX8WdzGpZ6iRBviM9/gd14GJBQusfjt2
+wWIco5zWtdi9negi9Dn3VWBhh2hOBUiJAxhHYHHE6E19J33ck0cU9wRRRJARPoF9
+01kgowGXopDa+WqlY4lEBcqXi8W0HH8DfJxtYFY2EjYpj8JAvbsVW7iOHphCMtgt
+6cCvI50WUcfuyQBzrniorlx/p0mdWMOyueE6VRmXZHedK12dOwhfHOUCXK+ZMGEJ
+GTParArQ1ODoIt+oPHHxVw==
+=5OXO
+-----END PGP MESSAGE-----
+
+** accounts configuration
+
+The account configuration consist in setting the passwords in =.authinfo=, setting the accounts in =offlineimaprc= and setting the ~mu4e-contexts~ objects that will in turn, set the builtin variables of emacs to the appropriate values when switching accounts.
+
+[[Elisp:(info "(mu4e) Contexts example")][Editing multiple mu4e contexts as an unique sexp]] with levels and backquotes is an operation that is proportionnaly difficult to the number of contexts you add.
+
+So here an helper function to get one context at a time based on the context-name, while preventing us to dupplicate contexts on multiple evaluation that may happen when tweaking the settings, it also allows us to separate the configuration of each mail account in separate blocks.
+
+#+NAME: create-or-update-mu4e-context
+#+begin_src emacs-lisp :tangle no :results silent
+;; * helper
+(cl-defun create-or-update-mu4e-context
+    (&key name enter-func leave-func match-func vars)
+  "Wrapper around `make-mu4e-context',
+to make a mu4e-context at a time,
+update the `mu4e-contexts' list,
+while avoiding duplicating elements
+with the same context name."
+  (let ((new-context
+         (make-mu4e-context
+          :name       name
+          :enter-func enter-func
+          :leave-func leave-func
+          :match-func match-func
+          :vars       vars)))
+    ;; try to find if this
+    ;; context is already here
+    (if-let
+        ((mu4e-context
+          (catch 'context
+            (dolist (mu4e-context mu4e-contexts)
+              (when (string=
+                     name
+                     (mu4e-context-name mu4e-context))
+                (throw 'context mu4e-context))))))
+        ;; so replace the old with the new
+        (setf (car (memq mu4e-context mu4e-contexts))
+              new-context)
+      ;; otherwise push the new
+      (push new-context mu4e-contexts))
+    new-context))
+#+end_src
+
+The next blocks will be tangled into =mu4e-personal-context.el.gpg=, in the same directory. They produce on evaluation a pretty-printed result to let us inspect their correctness.
+
+If you changed of contexts names, you can always start again from 0 by erasing the whole list :
+
+#+begin_src emacs-lisp :results silent
+(setq mu4e-contexts nil)
+#+end_src
+
+** example accounts                                                 :example:
+
+Here follow two dummy accounts that you can adapt and multiply for your own purpose.
+
+*** 2077snaillazy@gmail.com
+
+**** offlineimap 
+
+This block is meant to be tangled with =:tangle ~/.offlineimaprc :tangle-mode (identity #o600)=.
+
+#+begin_src conf :tangle no
+[Account 2077snaillazy]
+localrepository = Local-2077snaillazy
+remoterepository = Remote-2077snaillazy
+
+[Repository Local-2077snaillazy]
+type = Maildir
+localfolders = ~/.mail/2077snaillazy
+
+[Repository Remote-2077snaillazy]
+type = Gmail
+remotehost = imap.gmail.com
+remoteuser = 2077snaillazy@gmail.com
+remotepass = ASSkCe9cE5VZccTzm16oqyBzkXCHlOEbFu0SjqSmN
+#remotepasseval = get_password_emacs("imap.gmail.com", "2077snaillazy", "993")
+ssl = yes
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+maxconnections = 2
+folderfilter = lambda foldername: foldername not in ['[Gmail]/All Mail']
+#+end_src
+
+**** authinfo
+
+This block is meant to be tangled with =:tangle ~/.authinfo.gpg=.
+
+#+begin_src conf :tangle no
+machine smtp.gmail.com login 2077snaillazy@gmail.com port 587 password <insert-here-you-password>
+machine imap.gmail.com login 2077snaillazy@gmail.com port 993 password <insert-here-you-password>
+#+end_src
+
+**** mu4e context
+
+This block is meant to be tangled with the global directive at the top of the file : =:tangle "./personal/mail-configuration.el.gpg"=
+
+#+begin_src emacs-lisp :tangle no
+;; * 2077snaillazy@gmail.com
+(with-eval-after-load 'mu4e
+
+  ;; set the colors
+  (setf (alist-get "lazysnail2077@gmail.com"
+                   mu4e-accounts-colors
+                   nil nil #'string=)
+        "green")
+
+  (create-or-update-mu4e-context
+   ;; I use the context-name
+   ;; as name for folders and
+   ;; name of msmtp accounts
+   :name "2077snaillazy"
+   ;; ** functions
+   :enter-func
+   (lambda ()
+     (mu4e-message
+      "Hello 2077snaillazy@gmail.com"))
+   :leave-func
+   (lambda ()
+     (mu4e-message
+      "Bye 2077snaillazy@gmail.com"))
+   :match-func
+   (lambda (msg)
+      (when msg
+        (when msg
+          (mu4e-message-contact-field-matches
+           msg
+           '(:from :to :cc :bcc)
+           "2077snaillazy@gmail.com"))))
+   :vars
+   `((user-mail-address . "2077snaillazy@gmail.com")
+     (user-full-name . "Snail Lazy")
+     (mu4e-compose-signature
+      . "")
+     ;; **  inbox settings
+     ;; initialise the folders otherwise
+     ;; it will uses and creates defaults ones
+     (mu4e-trash-folder
+      . "/2077snaillazy/[Gmail].Trash")
+     (mu4e-sent-folder
+      . "/2077snaillazy/[Gmail].Sent Mail")
+     (mu4e-drafts-folder
+      . "/2077snaillazy/[Gmail].Drafts")
+     (mu4e-maildir-shortcuts
+      . (("/2077snaillazy/INBOX" . ?i)
+         ("/2077snaillazy/[Gmail].Trash" . ?t)
+         ("/2077snaillazy/[Gmail].Sent Mail" . ?s)
+         ("/2077snaillazy/[Gmail].Spam" . ?S)))
+     ;; **  msmtp configuration
+     (smtpmail-smtp-user
+      . "2077snaillazy@gmail.com")
+     (smtpmail-mail-address
+      . "2077snaillazy@gmail.com")
+     (smtpmail-smtp-server
+      . "smtp.gmail.com")
+     (smtpmail-smtp-service . 587))))
+#+end_src
+
+**** tests
+
+This block is meant to be tangled with =:tangle ~/mail.test.el=.
+
+#+begin_src emacs-lisp :tangle no :eval no
+(ert-deftest mail-test-account-1 ()
+    "Testing sending mails with account 1"
+  ;; should not produce an error
+  (should
+   (save-window-excursion
+    (mu4e-context-switch 'force "2077snaillazy")
+    (mu4e-compose-new)
+    (insert "lazysnail2077@gmail.com")
+    (next-line)
+    (insert "mail-test-account-1")
+    (message-send-and-exit))))
+#+end_src
+
+*** lazysnail2077@gmail.com
+**** offlineimap
+
+This block is meant to be tangled with =:tangle ~/.offlineimaprc :tangle-mode (identity #o600)=
+
+#+begin_src conf :tangle no
+[Account lazysnail2077]
+localrepository = Local-lazysnail2077
+remoterepository = Remote-lazysnail2077
+
+[Repository Local-lazysnail2077]
+type = Maildir
+localfolders = ~/.mail/lazysnail2077
+
+[Repository Remote-lazysnail2077]
+type = Gmail
+remotehost = imap.gmail.com
+remoteuser = lazysnail2077@gmail.com
+remotepass = <insert-here-you-password>
+# once done, secure them with eg :
+#remotepasseval = get_password_emacs("imap.gmail.com", "lazysnail2077", "993")
+ssl = yes
+# This vary on operating systems.
+sslcacertfile = /etc/ssl/certs/ca-certificates.crt
+maxconnections = 2
+# folder(s)? to exclude
+# All Mail seems to be a constant source of duplicates
+folderfilter = lambda foldername: foldername not in ['[Gmail]/All Mail']
+#+end_src
+
+**** authinfo
+
+This block is meant to be tangled with =:tangle ~/.authinfo.gpg=.
+
+#+begin_src conf :tangle no
+machine smtp.gmail.com login lazysnail2077@gmail.com port 587 password <insert-here-you-password>
+machine imap.gmail.com login lazysnail2077@gmail.com port 993 password <insert-here-you-password>
+#+end_src
+
+**** mu4e context
+
+This block is meant to be tangled with the global directive at the top of the file : =:tangle "./personal/mail-configuration.el.gpg"=
+
+#+begin_src emacs-lisp :tangle no
+;; * lazysnail2077@gmail.com
+(with-eval-after-load 'mu4e
+
+  ;; set the colors
+  (setf (alist-get "lazysnail2077@gmail.com"
+                   mu4e-accounts-colors
+                   nil nil #'string=)
+        "red")
+
+  (create-or-update-mu4e-context
+   ;; I use the context-name
+   ;; as name for folders and
+   ;; name of msmtp accounts
+   :name "lazysnail2077"
+   ;; ** functions
+   :enter-func
+   (lambda ()
+     (mu4e-message
+      "Hello lazysnail2077@gmail.com"))
+   :leave-func
+   (lambda ()
+     (mu4e-message
+      "Bye lazysnail2077@gmail.com"))
+   :match-func
+   (lambda (msg)
+      (when msg
+        (when msg
+          (mu4e-message-contact-field-matches
+           msg
+           '(:from :to :cc :bcc)
+           "lazysnail2077@gmail.com"))))
+   :vars
+   `((user-mail-address . "lazysnail2077@gmail.com")
+     (user-full-name . "Snail Lazy")
+     (mu4e-compose-signature
+      . "")
+     ;; **  inbox settings
+     ;; initialise the folders otherwise
+     ;; it will uses and creates defaults ones
+     (mu4e-trash-folder
+      . "/lazysnail2077/[Gmail].Trash")
+     (mu4e-sent-folder
+      . "/lazysnail2077/[Gmail].Sent Mail")
+     (mu4e-drafts-folder
+      . "/lazysnail2077/[Gmail].Drafts")
+     (mu4e-maildir-shortcuts
+      . (("/lazysnail2077/INBOX" . ?i)
+         ("/lazysnail2077/[Gmail].Trash" . ?t)
+         ("/lazysnail2077/[Gmail].Sent Mail" . ?s)
+         ("/lazysnail2077/[Gmail].Spam" . ?S)))
+     ;; **  msmtp configuration
+     (smtpmail-smtp-user
+      . "lazysnail2077@gmail.com")
+     (smtpmail-mail-address
+      . "lazysnail2077@gmail.com")
+     (smtpmail-smtp-server
+      . "smtp.gmail.com")
+     (smtpmail-smtp-service . 587))))
+#+end_src
+
+**** tests 
+
+This block is meant to be tangled with =:tangle ~/mail.test.el=.
+
+#+begin_src emacs-lisp :tangle no :eval no
+(ert-deftest mail-test-account-2 ()
+    "Testing sending mails with account 2"
+  ;; should not produce an error
+  (should
+   (save-window-excursion
+    (mu4e-context-switch 'force "lazysnail2077")
+    (mu4e-compose-new)
+    (insert "2077snaillazy@gmail.com")
+    (next-line)
+    (insert "mail-test-account-2")
+    (message-send-and-exit))))
+#+end_src
+
+** personal data                                                      :crypt:
+-----BEGIN PGP MESSAGE-----
+
+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
+xF9UcInkxevo9FNWuWiU
+=sB0d
+-----END PGP MESSAGE-----
+
+** provide
+
+#+begin_src emacs-lisp :results silent
+;; * end
+(provide 'mail-configuration)
+#+end_src
+
+** file variables
+
+~org-crypt~ comes with a function that you may enable, ~org-crypt-use-before-save-magic~ that simply put ~org-encrypt-entries~ locally on org-mode buffer's ~before-save-hook~. That may be what you want to encrypt your notes, however in the case of a litteral configuration we want rather theses entries to be decrypted while tangling to encrypted files, and be encrypted in the org file on save.
+
+I use an org-block only to format that code more nicely than in a file variable declaration.
+
+#+NAME: tangling-hook
+#+begin_src emacs-lisp :tangle no
+(auto-save-mode 0)
+(org-decrypt-entries)
+(set-buffer-modified-p nil)
+(org-babel-tangle)
+(org-encrypt-entries)
+(set-buffer-modified-p nil)
+#+end_src 
+
+# Local Variables:
+# after-save-hook: (lambda () (org-sbe "tangling-hook"))
+# End:
+
