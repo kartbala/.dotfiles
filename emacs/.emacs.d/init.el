@@ -775,3 +775,10 @@ relatively quiet pace.")
 
 ;; access forges with magit
 ;; (use-package forge)
+
+(define-prefix-command 'file-prefix 'file-prefix) 
+(global-set-key (kbd "C-c u") 'file-prefix)
+(use-package crux
+  :bind (:map file-prefix
+              ("s" . crux-sudo-edit)
+              ("w" . crux-kill-buffer-truename)))
