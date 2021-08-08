@@ -170,6 +170,8 @@
 (defun pils-truncate-lines ()
   (setq truncate-lines t))
 
+(setq max-mini-window-height 1.0)
+
 (add-hook 'prog-mode-hook #'pils-truncate-lines 100)
 ;; extra work for emacs, does we need to tweak it?
 (setq truncate-partial-width-windows nil)
