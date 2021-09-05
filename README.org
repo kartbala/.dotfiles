@@ -1,0 +1,16 @@
+
+.dotfiles folder managed by ~stow~ and ~org~.
+
+To propage them all, one can do :
+
+#+begin_src sh
+stow -v *
+#+end_src
+
+Some parts of this configuration are encrypted with ~org-crypt~ and ~gpg~ for privacy concerns; I can decrypt them and propagate their related files with :
+
+#+begin_src emacs-lisp
+emacsclient -ca "" -e "
+(view-echo-area-messages)
+(org-babel-tangle-file \"~/.dotfiles/emacs/.emacs.d/mail-configuration.org\")"
+#+end_src
