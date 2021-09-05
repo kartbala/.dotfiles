@@ -453,48 +453,148 @@ relatively quiet pace.")
    mode-line-misc-info
    mode-line-end-spaces))
 
-;; * Help for elisp
-;; Gives much more informations
-;; in Help buffers. Such as
-;; links to the elisp manual
-;; May even show the code of
-;; the functions but you need
-;; to have a copy of the source
-;; not compiled. Some providers
-;; only ship compiled code. :/
-(use-package helpful
-    :commands helpful--read-symbol
-    :init
-    (with-eval-after-load 'apropos
-      ;; patch apropos buttons to
-      ;; call helpful instead of help
-      (dolist (fun-bt '(apropos-function apropos-macro apropos-command))
-        (button-type-put
-         fun-bt 'action
-         (lambda (button)
-           (helpful-callable (button-get button 'apropos-symbol)))))
-      (dolist (var-bt '(apropos-variable apropos-user-option))
-        (button-type-put
-         var-bt 'action
-         (lambda (button)
-           (helpful-variable (button-get button 'apropos-symbol))))))
+;; ** custom which-key
+;; Which-key trade visual place for helping us
+;; to remember the keybindings and to discover
+;; new ones in a format more compact than
+;; [C-h m], describe-mode does.
+(use-package which-key
+  :init
+  (setq which-key-sort-order #'which-key-prefix-then-key-order
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10)
 
-    :bind
-    ([remap describe-function]
-     . helpful-callable)
-    ([remap describe-command]
-     . helpful-command)
-    ([remap describe-variable]
-     . helpful-variable)
-    ([remap describe-key]
-     . helpful-key)
-    ;; helpful-symbol does not
-    ;; consider the faces
-    ;; ([remap describe-symbol]    . helpful-symbol)
-    ([remap display-local-help]
-     . helpful-at-point)
-    (:map helpful-mode-map
-          ("." . helpful-at-point)))
+  :config
+  ;; Lower values may conflict with others
+  ;; packages such as taoline when switching
+  ;; windows or when using the function
+  ;; `read-char' in a chord
+  (setq which-key-echo-keystrokes 0.6)
+  (setq which-key-idle-delay 0.7)
+
+  ;; Describe the current major mode bindings
+  (global-set-key (kbd "C-c h") #'which-key-show-major-mode)
+
+  ;; Use it to help you learn new modes
+  ;; this need to be bound per minor mode basis
+  ;; for minor-modes with a lot of keybindings.
+  (defun pils--which-key-minor-mode (minor-mode)
+    "Use which key to describe MINOR-MODE's bindings."
+    (which-key--show-keymap
+     (symbol-name minor-mode)
+     (cdr (assq minor-mode minor-mode-map-alist))))
+
+  ;; Declare a new window popup spec that
+  ;; always uses the current window.
+  (setq which-key-custom-popup-max-dimensions-function
+        (lambda (_spec)
+          (cons (window-text-height)
+                (window-text-width))))
+
+  (setq which-key-custom-hide-popup-function
+        #'which-key--hide-buffer-side-window)
+
+  (setq which-key-custom-show-popup-function
+        (lambda (_spec)
+          (display-buffer-strictly-same-window
+           which-key--buffer
+           nil)))
+
+  (setq which-key-popup-type 'custom)
+
+  ;; Activate.
+  (which-key-mode 1))
+;; ** hydras
+(use-package hydra
+  :config
+  ;; an hydra to make rectangle selection simple
+ (define-key ctl-x-map (kbd "<SPC>")
+  (defhydra hydra-rectangle (:body-pre (progn (rectangle-mark-mode 1))
+                             :color pink
+                             :hint nil
+                             :post (deactivate-mark))
+    "
+  ^^_i_^^   _w_:copy _o_pen  ^_N_ums _u_ndo
+_j_ _k_ _l_ _y_ank   _t_ype  ^^_s_wap-points
+ _q_uit^^^^ _d_:kill _c_lear _r_eset _R_egister"
+    ("i" rectangle-previous-line)
+    ("k" rectangle-next-line)
+    ("j" rectangle-backward-char)
+    ("l" rectangle-forward-char)
+    ("d" kill-rectangle)                    ; C-x r k
+    ("y" yank-rectangle)                    ; C-x r y
+    ("w" copy-rectangle-as-kill)            ; C-x r M-w
+    ("o" open-rectangle)                    ; C-x r o
+    ("t" string-rectangle)                  ; C-x r t
+    ("c" clear-rectangle)                   ; C-x r c
+    ("s" rectangle-exchange-point-and-mark) ; C-x C-x
+    ("N" rectangle-number-lines)            ; C-x r N
+    ("r" (if (region-active-p)
+             (deactivate-mark)
+           (rectangle-mark-mode 1)))
+    ("R" copy-rectangle-to-register)        ; C-x r r
+    ("u" undo nil)
+    ("q" nil)))
+
+;; an hydra to expose the apropos commands
+(define-key help-map "a"
+  (defhydra hydra-apropos (:color blue :hint nil)
+    "
+⸤_a_⸣propos \
+◆ ⸤_c_⸣ommand \
+◆ ⸤_d_⸣docs
+valu⸤_e_⸣ \
+◆ ⸤_l_⸣ibrary \
+◆ ⸤_u_⸣ser option
+⸤_v_⸣ariable \
+◆ ⸤_i_⸣nfo \
+◆ ⸤_t_⸣ags
+local valu⸤_E_⸣ \
+◆ local ⸤_V_⸣ar \
+◇ ⸤_q_⸣uit"
+    ("a" apropos)
+    ("c" apropos-command)
+    ("d" apropos-documentation)
+    ("e" apropos-value)
+    ("l" apropos-library)
+    ("u" apropos-user-option)
+    ("v" apropos-variable)
+    ("i" info-apropos)
+    ("t" xref-find-apropos)
+    ("E" apropos-local-value)
+    ("V" apropos-local-variable)
+    ("q" nil)))
+
+;; an hydra to learn the basics of sexp interaction
+(global-set-key (kbd "<f6>")
+  (defhydra hydra-sexp-navigation (:color pink
+                             :hint nil)
+    "
+_u_p   _a_:beg _p_rev _e_nd  _h_:m.def _t_ranspose
+_d_own _b_ack  _n_ext _f_orw _SPC_:m.sexp _q_uit
+_m_ind _k_ill _c_heck _r_aiz _D_:nar.def _w_iden
+"
+    ("u" backward-up-list)
+    ("d" down-list)
+    ("m" back-to-indentation)
+    ("a" beginning-of-defun)
+    ("p" backward-list)
+    ("e" end-of-defun)
+    ("b" backward-sexp)
+    ("n" forward-list)
+    ("f" forward-sexp)
+    ("h" mark-defun)
+    ("SPC" mark-sexp)
+    ("t" transpose-sexp)
+    ("k" kill-sexp)
+    ("c" check-parens)
+    ("r" raise-sexp)
+    ("D" narrow-to-defun)
+    ("w" widen)
+    ("q" nil))))
 
 ;; little snippets integrated
 ;; with helpful
