@@ -768,11 +768,11 @@ _m_ind _k_ill _c_heck _r_aiz _D_:nar.def _w_iden
   ;; don't show tasks as scheduled if they are already shown as a deadline
   ;; (setq org-agenda-skip-scheduled-if-deadline-is-shown t))
   ;; https://emacs.stackexchange.com/questions/12517/how-do-i-make-the-timespan-shown-by-org-agenda-start-yesterday
-;; ** files location
-  (setq org-default-notes-file (concat org-directory "notes.org"))
-  ;; Set to the location of your Org files on your local system
+  ;; ** files location
   (setq org-directory "/Users/karthikbalasubramanian/Google Drive/GTD/")
-  (setq org-agenda-files '("/Users/karthikbalasubramanian/Google Drive/GTD/"))
+  ;; Set to the location of your Org files on your local system
+  (setq org-default-notes-file (concat org-directory "notes.org"))
+  (setq org-agenda-files `(,(concat org-directory "calendar")))
   ;; ;; Set to the name of the file where new notes will be stored
   ;; (setq org-mobile-inbox-for-pull "~/Dropbox/GTD/flagged.org")
   ;; ;; Set to <your Dropbox root directory>/MobileOrg.
