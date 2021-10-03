@@ -1,11 +1,11 @@
 * mail configuration
 :PROPERTIES:
-:header-args: :tangle "./personal/mail-configuration.el.gpg" :mkdirp yes :results pp :wrap "src emacs-lisp :tangle no"
+:header-args: :tangle "~/.emacs.d/personal/mail-configuration.el.gpg" :mkdirp yes :results pp :wrap "src emacs-lisp :tangle no"
 :END:
 
 The choose of the mail stack is the following :
 
- - offlineimap to fetch mails.
+ - Offlineimap to fetch mails.
  - mu to index them.
  - mu4e to read them.
  - smtpmail (built-in) to send them.
@@ -90,7 +90,7 @@ Note: This block uses noweb references.
 (use-package mu4e
     :ensure nil
     :commands mu4e~start
-    :load-path "/usr/local/Cellar/mu/1.4.15/share/emacs/site-lisp/mu/mu4e/"
+    :load-path "/usr/local/Cellar/mu/1.6.6/share/emacs/site-lisp/mu/mu4e/"
     :custom
     (mu4e-mu-binary (expand-file-name "/usr/local/bin/mu"))
 ;; *** crypto
@@ -170,7 +170,7 @@ Note: This block uses noweb references.
     (add-to-list 'mu4e-view-actions
                  '("browser" . mu4e-action-view-in-browser) t)
     ;; update the database every ten minutes.
-    (setq mu4e-update-interval 600)
+    (setq mu4e-update-interval 6000)
 
     <<face-settings>>
 
@@ -263,7 +263,7 @@ The smtpmail variables will be set by the mu4e-context mechanism ; still it is w
           ("C-c c" . org-mu4e-store-and-capture)))
 #+end_src
 
-**** faces settings
+**** COMMENT faces settings
 
 This rude little function colors the mails in function of their fields to separate visually the differents contexts. The ~mu4e-accounts-colors~ variable is set later, with the differents contexts.
 
@@ -324,25 +324,25 @@ Note: exits codes for msmtp are the same as sendmail and are defined in =/usr/in
 *** personal data                                                     :crypt:
 -----BEGIN PGP MESSAGE-----
 
-hQIMA63nEC0fdHGcARAA5oIfC5E1QwegeHYysVhB1jaN4QcATxFPAqJ0ueYMS1lC
-f7iQetQNDd23E1FEnLf8X5gsFs8ubAXk39C8JmqKV4GIaNUeEp5DJHC1LhwylB/H
-V66/R0eVEpLVOg0heulAGy2oTVuWDa2oFo5HrIzbUbgx+KA4WwM+DnerEac61lz9
-hY8YAZ5vk3ZGb5RmXaU/kDK78C9eNTqDkWQhIavs2fDfxS/xRYJwXIkRZsAoIBqU
-9bZBhzzL/fzL0pHJpJXeku7r8qNsF5mLiMrClfwdK15mfGM7r8IAgUzlMfxrB1IO
-5Yh3h0cJxKzt96HePAlcaLQ10pqzmxju4hSFs2VaiuEAKCLs7d07+JcuiSqTZapa
-XeGSwsEXt0hdkFuK3W4DABCW/MueoIJN/ikRxrxCJLrDfXqEMWDNyJtPzLUQmWnb
-CxnnZh+Ax+3ZCOySzNDHFItGrlL/M2m6/32U9gjWz2TYrV1fVssVFi0EA85pV4bY
-nQ5ga8e44dStmeY//ljg1rYSeCsADegEcF5EJTrmZnt1TpNhgaRnjUlAa0ydOCR9
-XQxjTiiGNfAYFp6ZvpUIUW0/ehuOqEbiUvHBjLaNm9RaRUvM0F3amKOKenE31eFl
-8StvqFneIi7vPOxKvv5mFUB8EqPm9PC0lgYkwioK8arlRpOadS1wVGYGbtuoC6TS
-wG4BCRZka1eira7sEcovCcGaP3XDJpuINXiglN5VqNF8nFzRmpri2KiAYrDUa2sP
-ehL+W6xPM2TbDBO+FGpqcGhkw7U/lst0qMxUh0/IeFOyctpzM8VBSigOaREPukea
-W3rTWhAtI2L00vtMWopDA6IPRRjoqewmoX8WdzGpZ6iRBviM9/gd14GJBQusfjt2
-wWIco5zWtdi9negi9Dn3VWBhh2hOBUiJAxhHYHHE6E19J33ck0cU9wRRRJARPoF9
-01kgowGXopDa+WqlY4lEBcqXi8W0HH8DfJxtYFY2EjYpj8JAvbsVW7iOHphCMtgt
-6cCvI50WUcfuyQBzrniorlx/p0mdWMOyueE6VRmXZHedK12dOwhfHOUCXK+ZMGEJ
-GTParArQ1ODoIt+oPHHxVw==
-=5OXO
+hQIMA63nEC0fdHGcARAA1J6Dw+SpGtYYZPVH4MKjtbiG6dmmkZm2qHHf6YUkVYRg
+4ig4iUcnfDyzIaCV+LYAi9Cv1a/+HabUa+Q2A8bnXYJ/BRSaYH93vcqRQ14JVFnF
+gPHc2XcojM2Irrzvc+2lrVupmexvEdzsIIq4yaUCzSOgjqEPSI7j5lZBu5hK8W5b
+qRYB30/22EZK3vg+wROfWGaDUx0Dp9X6KlJliPGNVSkuEzIObGP2Cd6EM00UtKGx
+B8nP5HJCo7nsqsUekQYVkZ5NY4T3oUzl/hZoxN9c899jauXGXGGPr7pLMNqCkrvX
+wXoRFRK27AdzycfjAoD8BtWxGYek8GlIigZ0d0D51qRh0ZHyk04TOMuJY3tXxJoO
+wtrxthb/CkGw4bY89MAmiVlO9ZTCl8VUgbatgXwa6sRYoepQkDAF2f1ZDBorEWVp
+0OfZL9g12HlR50Uq1H0pZpzr5eL8t/xWYXFPJNWQP+fNCq/Vp4LcY4bH2wPbgUHJ
+rchUp8GsaW180aQShLNtvS1ucqKHe0UWQOhO1PVGSw5A+4E8lN05V6jJX3CzaIks
+RYI5ktIkE7HdByzmrPeDs0VmUuPDimj5ieAGzTEZWcYXOEah4/sHXh05ibMqUYZu
+LYFuMzp4PiEuN0AaumeG1bDhga86bh9gAyIBqU4+0mGHDP/nag4aonaEUSiqtK7S
+wGoB7zoawnW8W7XNNGGSYBKZ+iVDZLeM4p6pHE2zhkcWbXpcwdatQzFRJYeOnvFy
+JDSx0pBLGUBCsizTjCJu5btqyWOBsyZdsuHJ34AmO+bE0I24l3onnidACa2EadaF
+2gTfLjsMpL9kMC5sfS2xmmaYX4Xjay243bqL/mJBNLdPGQcTCjRCvU62HroryYuK
+UEPmZrNrYBPgMHVYSmPRS5UsWWZTdh01t6+0+0+9wLogGemwPk+eY6HqNMsp6Ji1
+2GTAeRPMTK7Q/b5GjDAIzLxZInlkHg1EJkWKjPrhSqWRyFSDADP+vFLg5g6BOj9T
+00q9V2tXzXGSq5hIZQDvJR5zMaya13dyBUqTj5r4/h7/u9h0AP5no/2u8SchitG5
+iTyGSRXHir3sXuOU
+=BfaJ
 -----END PGP MESSAGE-----
 
 ** accounts configuration
@@ -413,7 +413,7 @@ remoterepository = Remote-2077snaillazy
 
 [Repository Local-2077snaillazy]
 type = Maildir
-localfolders = ~/.mail/2077snaillazy
+localfolders = ~/Maildir/2077snaillazy
 
 [Repository Remote-2077snaillazy]
 type = Gmail
@@ -531,7 +531,7 @@ remoterepository = Remote-lazysnail2077
 
 [Repository Local-lazysnail2077]
 type = Maildir
-localfolders = ~/.mail/lazysnail2077
+localfolders = ~/Maildir/lazysnail2077
 
 [Repository Remote-lazysnail2077]
 type = Gmail
@@ -644,76 +644,77 @@ This block is meant to be tangled with =:tangle ~/mail.test.el=.
 ** personal data                                                      :crypt:
 -----BEGIN PGP MESSAGE-----
 
-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
-7lPyMci6nf/2Oa9URQ==
-=non/
+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
+Qw==
+=LBKb
 -----END PGP MESSAGE-----
 
 ** provide
@@ -728,6 +729,7 @@ wpHtGeL8X2rDnpibY/nx9K/hq3qfw6x1rrq++fhlmoP0cG07PjbAEgEIR6jzLSTV
 #+begin_src emacs-lisp
   ;; is org-agenda must be loaded before icalendar ?
   (use-package mu4e-icalendar
+    :after mu4e
     :ensure nil
     :config
     (require 'org-agenda)
@@ -744,30 +746,31 @@ wpHtGeL8X2rDnpibY/nx9K/hq3qfw6x1rrq++fhlmoP0cG07PjbAEgEIR6jzLSTV
 *** org-gcal                                                          :crypt:
 -----BEGIN PGP MESSAGE-----
 
-hQIMA63nEC0fdHGcAQ//fqIiAXD6NXXadxlwFXYKgUVe822t1XgpOj8uRzb0MUIF
-JjGdwhWkICTNzj8FM6oK4HrwYUi1RL+Rilc/EHELSRSCKpgHBMIoxVluZKtSF5fC
-ypWvgiS8L6/8TcOQUUp53XYW9mX6OLWdtp5e7+gmWQD4+nSB8cwq48RWgmqNSCRw
-SsSReB+ai30ucgFZAIZzTbr/NxqC52Wr7vygDHArRl82n8Hhwg36abPTriFGJVlv
-hIFbHVVmHt8AfdMpqjxX3wBikhl4tR74IU2U+ug3tB6oGIhPj0dQUYjRJw0FtLGT
-Slbyb/OtM1LHgtXBI6yJz/Pq8zjR/WOTiiLvcz4yzfy2fQWv+gC7+yPFIe8k5uZp
-jMFCII43PxZHRIZ5uxxujAtudUW86BlIy6iDmsMmYaNpKhhkn941Gv27ymnHfQNm
-/sdPEGh0X5xfQAsR3Ox1MOWWQZ2uP6mGxnJ+imrhQ84MvBz3/BZH73LaZH+Pzqfn
-Ax4w14MyDhqdMiRSl+eqwOdcvk7CUoddbn8s7OS5oM9MGR0QCjXOGA+XaTbwh/Ck
-DSKkh0XPtFQ6C+j+OB19ptK+b7XtZgVtQspp4sqRymTgF5ZrPUXUag0MtRvAMsbj
-2kJLsQfd05lkLDecgDHeI8vQaRco3fKANls/BSeLxtSBYhPTogvDTKIpnMGMVxHS
-6QFevebld7kFQvgQ3psln4MJbzWZPeLFDdLC9y+GRradszre7dKk98G1vCCMdDcR
-O7obRVAZQSL/jSi7vLMsEkARBeAhVuA8NEYepdRpYK7SEGK8IcqpaGUudqTz/YpG
-I1d71Kuqo+fFwMfQNbI/uU9DOF9pgMEiQY/ef0uZY0mlHDrFP0AY2ugHmx8gjL8f
-TeN/oDPdu82dQWPQ0K0pWM26HLFfcc3DMjeEejwe4k/ZSI6GwX46xVCoMKvsZTXH
-ThUdiKWzEf2ZIDNv4XFZOAkvpPSIZq1utxPvwNQBc4+fnwUG85hV2n5Zth/B24xr
-2tK9OZ0q5QFvQIxrLElbV+VqYpT5+WlKbSuiBxspHcDzmT0VRrxG0DNNpCKd75oW
-+moCqGudWdAbj+0zpSUszKLPW3/iOKJ2Gk5a5VM/2RCtOn0IiYs0MpbfrO4pyj6M
-SQXeLvO9O7snkncqgo/R6gr+qf3gfcYKkJOgLpeV8bISk8RtBy8JN5UjnpFVDWSB
-lh3XYLgF+8Hy+4zZoKfc2DrbQSL0ck1n+27f3/rB9CapxWYyDgCoQXlmKQQ0ouQI
-VAiELUarhMJ8YcZzTrrcW5jHerq5rkm3YCKwIkdLCE9Ii4Sj32qGzACG5Q8P/4a/
-m5eoVL/Rhzn8VFSpVLGyoXtbKu1ERKCHec294ayV05oKNoexFIyqxtweT7J3g5xa
-kaQYBJvQCPvetBB2kR2b55H0GGJ63p9szymxr1kyLjPp95+Dk6VhzA==
-=RlP/
+hQIMA63nEC0fdHGcARAAvXGB62efJcjRwUxt3lF+A6M4uqJdzBW050HsCAznvaoP
+5eqZkBDVgFtTIfgz4+5vkb3eN2FNGRTPwhqAo+JQN7vc7lw1Hw/EIanp4HCjGuSd
+9fALaA4DhPRkla8mg96lxEoAXRQhfnw8epcr+tiK1rl7KMpKMDIFmQGSqQ6vhOCg
+jVFNpYgFlsCIfdG9inGEwpaSchORuRczKJ5irTDqxCxQ6lLLy03Becm6QcWmVS0G
+aj8KJJCMax+xjRzSezHzH/yGVKhrgD0TOWfUTjDW5ARSSzlRfZfJki2zEwOBXdSP
+A7KRlzUEZCd1IBV94YTt+IMBab1DOM90N5Uk0C3gac1jEWNdCohxmsGJ+DRLzmLZ
+ppA60/Sfn27hhkjsWFHYwt0FjzcimisFex7WA7dlOvum/TDhSY7ZZV5HuTOiiYK/
+GhMikPcpnO0MpF3L2PJ0Iud/FN6uglbGBArUpRZHtOdZ15A43ePGy9BNol+K+H4g
+EQgVvgAmyJhXO0z0H38QQLUD3r88AfYYQZ3Oiu7HLPCBNCZn4+i2J4u3s5LiQPjh
+Slfcrak0LArue2P4618G0n0+R7y2t02zvCsKF6i28EYqgVwxmanY1z2/xYAioEyg
+IWfYrmF6XFj6kw9MKoKKkxX2x/Tyw038Zw0ErPRnWbypsbxl/w0+7RbxzGu2mE3S
+6QGRKIniOhBtwCS7gn569np4aJOwIYCLBOR6fXJneiYEZkroEipNNAoeHSvIJ1mq
+qSzNcwilr+DFxvXlfOIPzuzGj4IILFkp1fWpUUXD06Oiy4Dwz+9I1KP4hBL/w6Na
+4jGQrZYecI+/0afBWYeOOVZKboxS5dO6LXABosXRYOoeDJENG5sosPOf3uRgToNm
+FTpJLM9fCydW/J2A4VziR9R2RCCI3ChvF/QsPo8B23iSuOi0otRqHJNna0leR4eh
+nkJQhccSfUbwBS+XrdbzmkigneLpgewkPSSLo6VLIhbDFwB6GNQrXX104W8Rn6RI
+h1aG7TaHGqHmoyyreAzukg61/FQV9kRabOG1c6+wZsFFjxdOuwpIrOwE2TxOQQdX
+HnOp7q3HYuff2GRGrDlL7Y7pE5ZscJuVf+/72/6AMchpsUkEf6nECj3M97KQ3zA0
+LqJIoNB20BsUwqSXL4jNJ2ILk/kDm453GwQUDGCwt3+lonW1gLPELq/GmW+MON5L
+CMkW8VfYbgpSNiSV76sPyvueK135WzeJwSYjGlHoyaiEEIahDQLkTiJ49Py3UaGE
+w9cczLGrmQEJXPYAlhSU+ZBPnuROYnGMdPYJWCsLiGw1Jy1PqgeLfGxk8JRPQBaa
+3R8ghsqdcflyGj8IysL3LE5/EqSmN8BMYa5V4to5A7yaSVBEP1XtErib+FY4EnUK
+Q9vBYKDv60VyiI6ieUH8BWEIe4Cr5383oOM1zsQ71keNQqj9JIexO5zMUTBY4Hi/
+iBNDMTr3B5wkcYc=
+=p7nA
 -----END PGP MESSAGE-----
 
 ** excorporate
@@ -806,4 +809,5 @@ I use an org-block only to format that code more nicely than in a file variable 
 
 # Local Variables:
 # after-save-hook: (lambda () (org-sbe "tangling-hook"))
+# epa-file-encrypt-to: "kartbala@gmail.com"
 # End:

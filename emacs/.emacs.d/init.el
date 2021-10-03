@@ -170,6 +170,10 @@
 (defun pils-truncate-lines ()
   (setq truncate-lines t))
 
+(with-eval-after-load 'calendar
+  (add-hook 'calendar-initial-window-hook
+            #'pils-truncate-lines)) 
+
 (setq max-mini-window-height 1.0)
 
 (add-hook 'prog-mode-hook #'pils-truncate-lines 100)
@@ -209,7 +213,7 @@
 ;; 49 chars on screen
 (set-face-attribute 'default nil :height 1300)
 ;; 40 chars on screen
-(set-face-attribute 'default nil :height 800)
+(set-face-attribute 'default nil :height 300)
 ;; emacs comes with the ‘text-scale-adjust’
 ;; command, bound to C-x C-=
 ;; but it only adjust the font
@@ -839,3 +843,4 @@ _m_ind _k_ill _c_heck _r_aiz _D_:nar.def _w_iden
   :bind (:map file-prefix
               ("s" . crux-sudo-edit)
               ("w" . crux-kill-buffer-truename)))
+
