@@ -86,13 +86,21 @@ I specify the passwords myself, so don't ask for saving them.
 
 Note: This block uses noweb references.
 
+
 #+begin_src emacs-lisp :noweb yes
+
+(defvar my-mu4e-load-path
+(if (string= (system-name) "macbook-pro-75.lan")           "/usr/local/Cellar/mu/1.6.6/share/emacs/site-lisp/mu/mu4e/" "/opt/homebrew/Cellar/mu/1.6.6/share/emacs/site-lisp/mu/mu4e"))
+
+(defvar my-mu-binary-load-path
+(if (string= (system-name) "macbook-pro-75.lan") "/usr/local/bin/mu" "/opt/homebrew/bin/mu"))
+
 (use-package mu4e
     :ensure nil
     :commands mu4e~start
-    :load-path "/usr/local/Cellar/mu/1.6.6/share/emacs/site-lisp/mu/mu4e/"
+    :load-path my-mu4e-load-path
     :custom
-    (mu4e-mu-binary (expand-file-name "/usr/local/bin/mu"))
+    (mu4e-mu-binary my-mu-binary-load-path)
 ;; *** crypto
 ;; do you want to sign messages with pgp ?
     ;; (setq mu4e-compose-crypto-reply-policy 'sign-and-encrypt)
