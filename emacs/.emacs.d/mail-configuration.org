@@ -300,6 +300,10 @@ See the context examples for the format of ~pils/mu4e-headers-faces-alist~.
               face))
       face))
 
+  (defcustom pils/mu4e-headers-faces-alist nil
+    "Alist of mail adress, flags,
+and faces to apply to them")
+
   (setq mu4e-column-faces-adjust-face
         #'pils-mu4e-column-faces-adjust)
 
@@ -450,18 +454,19 @@ This block is meant to be tangled with the global directive at the top of the fi
 ;; * 2077snaillazy@gmail.com
 (with-eval-after-load 'mu4e
 
-  ;; set the colors
-  (defface pils/mu4e-snail-face-read
-    '((t :foreground "yellow4"))
-    :group 'mu4e-column-faces)
-  (defface pils/mu4e-snail-face-unread
-    '((t :foreground "yellow1"))
-    :group 'mu4e-column-faces)
+  (with-eval-after-load 'mu4e-column-faces 
+    ;; set the colors
+    (defface pils/mu4e-snail-face-read
+      '((t :foreground "yellow4"))
+      :group 'mu4e-column-faces)
+    (defface pils/mu4e-snail-face-unread
+      '((t :foreground "yellow1"))
+      :group 'mu4e-column-faces)
 
-  (add-to-list 'pils/mu4e-headers-faces-alist
-               '(("2077snaillazy@gmail.com"
-                  (seen pils/mu4e-lazy-face-read)
-                  (unread pils/mu4e-lazy-face-unread))))
+    (add-to-list 'pils/mu4e-headers-faces-alist
+                 '(("2077snaillazy@gmail.com"
+                    (seen pils/mu4e-lazy-face-read)
+                    (unread pils/mu4e-lazy-face-unread)))))
 
   (create-or-update-mu4e-context
    ;; I use the context-name
@@ -579,18 +584,19 @@ This block is meant to be tangled with the global directive at the top of the fi
 ;; * lazysnail2077@gmail.com
 (with-eval-after-load 'mu4e
 
-  ;; set the colors
-  (defface pils/mu4e-lazy-face-read
-    '((t :foreground "red4"))
-    :group 'mu4e-column-faces)
-  (defface pils/mu4e-lazy-face-unread
-    '((t :foreground "red1"))
-    :group 'mu4e-column-faces)
+    (with-eval-after-load 'mu4e-column-faces
+      ;; set the colors
+      (defface pils/mu4e-lazy-face-read
+        '((t :foreground "red4"))
+        :group 'mu4e-column-faces)
+      (defface pils/mu4e-lazy-face-unread
+        '((t :foreground "red1"))
+        :group 'mu4e-column-faces)
 
-  (add-to-list 'pils/mu4e-headers-faces-alist
-               '(("lazysnail2077@gmail.com"
-                  (seen pils/mu4e-snail-face-read)
-                  (unread pils/mu4e-snail-face-unread))))
+      (add-to-list 'pils/mu4e-headers-faces-alist
+                   '(("lazysnail2077@gmail.com"
+                      (seen pils/mu4e-snail-face-read)
+                      (unread pils/mu4e-snail-face-unread)))))
 
   (create-or-update-mu4e-context
    ;; I use the context-name
