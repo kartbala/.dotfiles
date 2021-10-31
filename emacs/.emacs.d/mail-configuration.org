@@ -32,13 +32,13 @@ pythonfile = ~/.offlineimap.py
 
 *** pythonfile
 
-You can specify parrwords in plain text in your configuration, and it is helpful to do so while installing the stack (if that your case you can skip that heading for now), just do not forget, once it is done, to secure your credentials.
+You can specify passwords in plain text in your configuration, and it is helpful to do so while installing the stack (if that your case you can skip that heading for now), just do not forget, once it is done, to secure your credentials.
 
 ~offlineimap~ let you use python to fetch the password of your accounts.
 
 This bit of python is only a wrapper to call ~emacsclient~ with a function that will parse [[elisp:(info "(auth) Help for users")][the =.authinfo= file]]. 
 
-#+begin_src python :shebang "#!/bin/python" :tangle ~/.offlineimap.py
+#+begin_src python :shebang "#!/bin/python" :tangle "../offlineimap.py"
 import subprocess
 def get_output(cmd):
 # Bunch of boilerplate to catch the output of a command:
@@ -166,6 +166,8 @@ Note: This block uses noweb references.
     (mu4e-hide-index-messages t)
 ;; ** mu4e configurations
     :config
+    ;; Attaching files from dired with C-c C-a
+    (add-hook 'dired-mode-hook 'turn-on-gnus-dired-mode)
     ;; display message in a browser
     (add-to-list 'mu4e-view-actions
                  '("browser" . mu4e-action-view-in-browser) t)
@@ -419,7 +421,7 @@ localfolders = ~/Maildir/2077snaillazy
 type = Gmail
 remotehost = imap.gmail.com
 remoteuser = 2077snaillazy@gmail.com
-remotepass = ASSkCe9cE5VZccTzm16oqyBzkXCHlOEbFu0SjqSmN
+remotepass = <insert-here-you-password>
 #remotepasseval = get_password_emacs("imap.gmail.com", "2077snaillazy", "993")
 ssl = yes
 sslcacertfile = /etc/ssl/certs/ca-certificates.crt
@@ -438,17 +440,17 @@ machine imap.gmail.com login 2077snaillazy@gmail.com port 993 password <insert-h
 
 **** mu4e context
 
-This block is meant to be tangled with the global directive at the top of the file : =:tangle "./personal/mail-configuration.el.gpg"=
+This block is meant to be tangled with the global directive at the top of the file : =:tangle "~/.emacs.d/personal/mail-configuration.el.gpg"=
 
 #+begin_src emacs-lisp :tangle no
 ;; * 2077snaillazy@gmail.com
 (with-eval-after-load 'mu4e
 
   ;; set the colors
-  (setf (alist-get "lazysnail2077@gmail.com"
-                   mu4e-accounts-colors
-                   nil nil #'string=)
-        "green")
+  ;; (setf (alist-get "lazysnail2077@gmail.com"
+  ;;                  mu4e-accounts-colors
+  ;;                  nil nil #'string=)
+  ;;       "green")
 
   (create-or-update-mu4e-context
    ;; I use the context-name
@@ -560,17 +562,17 @@ machine imap.gmail.com login lazysnail2077@gmail.com port 993 password <insert-h
 
 **** mu4e context
 
-This block is meant to be tangled with the global directive at the top of the file : =:tangle "./personal/mail-configuration.el.gpg"=
+This block is meant to be tangled with the global directive at the top of the file : =:tangle "~/.emacs.d/personal/mail-configuration.el.gpg"=
 
 #+begin_src emacs-lisp :tangle no
 ;; * lazysnail2077@gmail.com
 (with-eval-after-load 'mu4e
 
   ;; set the colors
-  (setf (alist-get "lazysnail2077@gmail.com"
-                   mu4e-accounts-colors
-                   nil nil #'string=)
-        "red")
+  ;; (setf (alist-get "lazysnail2077@gmail.com"
+  ;;                  mu4e-accounts-colors
+  ;;                  nil nil #'string=)
+  ;;       "red")
 
   (create-or-update-mu4e-context
    ;; I use the context-name
@@ -725,7 +727,7 @@ Qw==
 #+end_src
 
 ** calendar
-*** mu4e-icalendar
+*** COMMENT mu4e-icalendar
 #+begin_src emacs-lisp
   ;; is org-agenda must be loaded before icalendar ?
   (use-package mu4e-icalendar
@@ -773,41 +775,84 @@ iBNDMTr3B5wkcYc=
 =p7nA
 -----END PGP MESSAGE-----
 
-** excorporate
-
-#+begin_src emacs-lisp :results silent :tangle no
-(use-package excorporate
-  :after org-agenda
-  :config
-  (setq-default excorporate-configuration
-                '(("karthik.b@howard.edu" . "https://outlook.office365.com/EWS/Exchange.asmx"))
-                org-agenda-include-diary t)
-  ;; activate excorporate and request
-  ;; user/password to start the connexion
-  (excorporate)
-  ;; enable the diary integration
-  ;; (i.e. write exchange calendra to emacs
-  ;; diary-file)
-  (excorporate-diary-enable))
-#+end_src
-
-** file variables
+** directory and file variables
 
 ~org-crypt~ comes with a function that you may enable, ~org-crypt-use-before-save-magic~ that simply put ~org-encrypt-entries~ locally on org-mode buffer's ~before-save-hook~. That may be what you want to encrypt your notes, however in the case of a litteral configuration we want rather theses entries to be decrypted while tangling to encrypted files, and be encrypted in the org file on save.
 
-I use an org-block only to format that code more nicely than in a file variable declaration.
+Its not straightforward for ~org~ and ~epa~ to accept our key from the tangled files without prompting us each time for each target files to tangle :
+ - ~epa~ expect ~epa-file-encrypt-to~ to be a local variable.
+ - ~org~ write the tangled files from within a temp buffer that does not inherit local-variables.
 
-#+NAME: tangling-hook
+So I define a few bits to workaround :
+
+First let's comfort ~epa-file-write-region~ by setting locally ~epa-file-encrypt-to~. This will be evaluated in all modes of the directory.
+
+#+NAME: epa-file-encrypt-to
 #+begin_src emacs-lisp :tangle no
-(auto-save-mode 0)
-(org-decrypt-entries)
-(set-buffer-modified-p nil)
-(org-babel-tangle)
-(org-encrypt-entries)
-(set-buffer-modified-p nil)
-#+end_src 
+(setq-local epa-file-encrypt-to
+            '("kartbala@gmail.com"))
+#+end_src
+
+But that not suffiscient : the temporary buffer must receive that local variable. This will be evaluated in all ~org-mode~ files of the directory.
+
+#+NAME: epa-file-write-region/advice
+#+begin_src emacs-lisp :tangle no
+(advice-add 'epa-file-write-region
+            :before
+            #'(lambda (&rest _args)
+                (hack-local-variables)))
+#+end_src
+
+~org-babel-tangle~ already trigger 3 hooks, nonetheless I add one at the very end of the function.  This will be evaluated in all ~org-mode~ files of the directory.
+
+#+NAME: org-babel-tangle/final-hook
+#+begin_src emacs-lisp :tangle no
+(defun pils--tangle-final-hook (&rest _args)
+  (run-hooks 'org-babel-tangle-final-hook))
+(advice-add 'org-babel-tangle :after
+            #'pils--tangle-final-hook)
+#+end_src
+
+Now we have all the necessity to make it happens :
+  1. Decrypt before tangling.
+  2. Does not save before tangling.
+  3. Encrypt before saving.
+  4. Save at the final step of tangling.
+
+This will be evaluated in all ~org-mode~ files of the directory.
+
+#+NAME: decrypt/encrypt-hooks
+#+begin_src emacs-lisp :tangle no
+(add-hook 'org-babel-pre-tangle-hook
+          #'org-decrypt-entries t)
+(remove-hook 'org-babel-pre-tangle-hook
+             #'save-buffer t)
+(add-hook 'before-save-hook
+          #'org-encrypt-entries t)
+(add-hook 'org-babel-tangle-final-hook
+          #'save-buffer t)
+#+end_src
+
+Wrap it up :
+
+#+begin_src emacs-lisp :tangle ".dir-locals.el" :noweb yes
+;;; Directory Local Variables
+;;; For more information see (info "(emacs) Directory Variables")
+
+((nil ;; All modes.
+  . ((eval
+      . (progn
+      <<epa-file-encrypt-to>>
+          ))))
+ (org-mode
+  . ((eval
+      . (progn
+      <<epa-file-write-region/advice>>
+      <<epa-file-write-region/advice>>
+      <<org-babel-tangle/final-hook>>
+      <<decrypt/encrypt-hooks>>
+          )))))
+#+end_src
 
 # Local Variables:
-# after-save-hook: (lambda () (org-sbe "tangling-hook"))
-# epa-file-encrypt-to: "kartbala@gmail.com"
-# End:
+# eval: (auto-save-mode 0)

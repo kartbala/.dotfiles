@@ -807,13 +807,12 @@ _m_ind _k_ill _c_heck _r_aiz _D_:nar.def _w_iden
 (use-package org-crypt
   :ensure nil
   :after org
-  :config
-  (org-crypt-use-before-save-magic)
   :custom
   (org-crypt-key "kartbala@gmail.com")
   :bind
   (:map org-mode-map
-        ("C-c C-/" . #'org-decrypt-entry)))
+        ("C-c C-/" . org-decrypt-entry)
+        ("C-c M-/" . org-decrypt-entries)))
 
 ;; * ess
 ;; Set default R version, (i.e. the one launched by typing M-x R <RET>)
@@ -846,4 +845,3 @@ _m_ind _k_ill _c_heck _r_aiz _D_:nar.def _w_iden
   :bind (:map file-prefix
               ("s" . crux-sudo-edit)
               ("w" . crux-kill-buffer-truename)))
-
