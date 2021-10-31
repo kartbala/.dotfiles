@@ -265,41 +265,37 @@ The smtpmail variables will be set by the mu4e-context mechanism ; still it is w
           ("C-c c" . org-mu4e-store-and-capture)))
 #+end_src
 
-**** COMMENT faces settings
+**** faces settings
 
-This rude little function colors the mails in function of their fields to separate visually the differents contexts. The ~mu4e-accounts-colors~ variable is set later, with the differents contexts.
+The package ~mu4e-column-faces~ let us specify faces by columns and by message fields. 
+
+See the context examples for the format of ~pils/mu4e-headers-faces-alist~.
 
 #+NAME: face-settings
 #+begin_src emacs-lisp :tangle no :results silent
 ;; * faces
-(defvar mu4e-accounts-colors nil)
+(use-package mu4e-column-faces
+  :after mu4e
+  :config
+  (defun pils-mu4e-column-faces-adjust (face field val msg)
+    (if (eq field :from)
+        (when-let ((alist (alist-get
+                           (cdar (mu4e-msg-field msg :from))
+                           pils/mu4e-headers-faces-alist
+                           nil nil #'string=))
+                   (flags (mu4e-message-field msg :flags)))
+          (or (catch 'face
+                (let (new-face)
+                  (dolist (f flags)
+                    (when (setq new-face (alist-get f alist))
+                      (throw 'face new-face)))))
+              face))
+      face))
 
-(defun mu4e-headers-line-apply-accounts-face (msg line)
-  "Apply a foreground face to the header in function of
-`mu4e-accounts-colors'."
-  ;; loop over the fields
-  ;; so it distincts also
-  ;; our own accounts if
-  ;; ever we send a mail
-  ;; between them
-  (let ((fields '(:from :to :cc :bcc)))
-    (catch 'found
-      (dolist (field fields)
-        ;; found the face
-        (dolist (account mu4e-accounts-colors)
-          (when (mu4e-message-contact-field-matches
-                 msg field
-                 (car account))
-            (add-face-text-property
-             0 (length line)
-             `(:foreground ,(cdr account))
-             t line)
-            (throw 'found t)))))
-    ;; always returns the line
-    line))
+  (setq mu4e-column-faces-adjust-face
+        #'pils-mu4e-column-faces-adjust)
 
-(add-to-list 'mu4e~headers-line-handler-functions
-             'mu4e-headers-line-apply-accounts-face)
+  (mu4e-column-faces-mode))
 #+end_src
 
 *** offlineimap test & usage
@@ -447,10 +443,17 @@ This block is meant to be tangled with the global directive at the top of the fi
 (with-eval-after-load 'mu4e
 
   ;; set the colors
-  ;; (setf (alist-get "lazysnail2077@gmail.com"
-  ;;                  mu4e-accounts-colors
-  ;;                  nil nil #'string=)
-  ;;       "green")
+  (defface pils/mu4e-snail-face-read
+    '((t :foreground "yellow4"))
+    :group 'mu4e-column-faces)
+  (defface pils/mu4e-snail-face-unread
+    '((t :foreground "yellow1"))
+    :group 'mu4e-column-faces)
+
+  (add-to-list 'pils/mu4e-headers-faces-alist
+               '(("2077snaillazy@gmail.com"
+                  (seen pils/mu4e-lazy-face-read)
+                  (unread pils/mu4e-lazy-face-unread))))
 
   (create-or-update-mu4e-context
    ;; I use the context-name
@@ -468,12 +471,12 @@ This block is meant to be tangled with the global directive at the top of the fi
       "Bye 2077snaillazy@gmail.com"))
    :match-func
    (lambda (msg)
-      (when msg
-        (when msg
-          (mu4e-message-contact-field-matches
-           msg
-           '(:from :to :cc :bcc)
-           "2077snaillazy@gmail.com"))))
+     (when msg
+       (when msg
+         (mu4e-message-contact-field-matches
+          msg
+          '(:from :to :cc :bcc)
+          "2077snaillazy@gmail.com"))))
    :vars
    `((user-mail-address . "2077snaillazy@gmail.com")
      (user-full-name . "Snail Lazy")
@@ -569,10 +572,17 @@ This block is meant to be tangled with the global directive at the top of the fi
 (with-eval-after-load 'mu4e
 
   ;; set the colors
-  ;; (setf (alist-get "lazysnail2077@gmail.com"
-  ;;                  mu4e-accounts-colors
-  ;;                  nil nil #'string=)
-  ;;       "red")
+  (defface pils/mu4e-lazy-face-read
+    '((t :foreground "red4"))
+    :group 'mu4e-column-faces)
+  (defface pils/mu4e-lazy-face-unread
+    '((t :foreground "red1"))
+    :group 'mu4e-column-faces)
+
+  (add-to-list 'pils/mu4e-headers-faces-alist
+               '(("lazysnail2077@gmail.com"
+                  (seen pils/mu4e-snail-face-read)
+                  (unread pils/mu4e-snail-face-unread))))
 
   (create-or-update-mu4e-context
    ;; I use the context-name
@@ -590,12 +600,12 @@ This block is meant to be tangled with the global directive at the top of the fi
       "Bye lazysnail2077@gmail.com"))
    :match-func
    (lambda (msg)
-      (when msg
-        (when msg
-          (mu4e-message-contact-field-matches
-           msg
-           '(:from :to :cc :bcc)
-           "lazysnail2077@gmail.com"))))
+     (when msg
+       (when msg
+         (mu4e-message-contact-field-matches
+          msg
+          '(:from :to :cc :bcc)
+          "lazysnail2077@gmail.com"))))
    :vars
    `((user-mail-address . "lazysnail2077@gmail.com")
      (user-full-name . "Snail Lazy")
