@@ -3,15 +3,17 @@
 
 To propage them all, one can do :
 
-#+begin_src sh
-stow -v *
+#+begin_src sh :shebang "#!/bin/sh" :tangle "init.sh"
+stow -vRt ~ */
 #+end_src
 
 Some parts of this configuration are encrypted with ~org-crypt~ and ~gpg~ for privacy concerns; I can decrypt them and propagate their related files with :
 
-#+begin_src emacs-lisp
+#+begin_src sh :tangle "init.sh"
 emacsclient -ca "" -e "(progn
-    (view-echo-area-messages)
-    (org-babel-tangle-file
-    \"~/.dotfiles/emacs/.emacs.d/mail-configuration.org\"))"
+    (let ((file (expand-file-name
+    \"emacs/.emacs.d/mail-configuration.org\")))
+    (require 'org-crypt)
+    (org-babel-tangle-file file)
+    (view-echo-area-messages)))"
 #+end_src
