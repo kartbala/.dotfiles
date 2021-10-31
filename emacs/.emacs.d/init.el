@@ -386,8 +386,11 @@ relatively quiet pace.")
 `emacs-lisp-mode', via the timer
 `pils--list-depth-timer' every
 0.2 seconds."
-  (if (memq major-mode '(emacs-lisp-mode
-                         lisp-interaction-mode))
+  (if (and
+       (not (or (minibufferp)
+                (input-pending-p)))
+       (memq major-mode '(emacs-lisp-mode
+                              lisp-interaction-mode)))
       (progn
         (when (not
                (timerp pils--list-depth-timer))
